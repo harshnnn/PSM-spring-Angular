@@ -1,0 +1,26 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+        - id: parcel-service
+          uri: lb://parcel-service
+          predicates:
+            - Path=/api/parcel/**
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
