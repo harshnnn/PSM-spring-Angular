@@ -1,0 +1,153 @@
+<div class="container">
+  <header>
+    <h1>Parcel Management System</h1>
+    <div *ngIf="user">Welcome {{user.userId}} <button (click)="logout()">Logout</button></div>
+  </header>
+
+  <p class="error" *ngIf="alert && alert !== 'Payment Successful'">{{alert}}</p>
+  <p class="success" *ngIf="alert === 'Payment Successful'">Payment Successful</p>
+
+  <section *ngIf="view==='login'" class="card">
+    <h2>Login</h2>
+    <form [formGroup]="loginForm" (ngSubmit)="doLogin()">
+      <label>User ID</label><input formControlName="userId" />
+      <label>Password</label><input type="password" formControlName="password" />
+      <label>Role</label><select formControlName="role"><option>CUSTOMER</option><option>OFFICER</option></select>
+      <button type="submit">Login</button>
+      <button type="button" (click)="view='register'">Customer Register</button>
+    </form>
+  </section>
+
+  <section *ngIf="view==='register'" class="card">
+    <h2>Customer Registration</h2>
+    <form [formGroup]="registerForm" (ngSubmit)="doRegister()">
+      <input placeholder="Customer Name" formControlName="name" />
+      <input placeholder="Email" formControlName="email" />
+      <div><select formControlName="countryCode"><option>+91</option><option>+1</option><option>+44</option></select>
+      <input placeholder="10 digit mobile" formControlName="mobile" /></div>
+      <textarea placeholder="Address with ZIP and parcel code" formControlName="address"></textarea>
+      <input placeholder="User ID" formControlName="userId" />
+      <input type="password" placeholder="Password" formControlName="password" />
+      <input type="password" placeholder="Confirm Password" formControlName="confirmPassword" />
+      <textarea placeholder="Preferences" formControlName="preferences"></textarea>
+      <button type="submit">Register</button>
+      <button type="button" (click)="registerForm.reset();">Reset</button>
+    </form>
+  </section>
+
+  <section *ngIf="view==='ack'" class="card">
+    <h3 class="success">Registration successful</h3>
+    <p>Customer username: <b>{{user.customerCode}}</b></p>
+    <p>Name: {{user.name}}</p>
+    <p>Email: {{user.email}}</p>
+    <button (click)="view='login'">Go To Login</button>
+  </section>
+
+  <section *ngIf="view==='customer-home' || view==='officer-home'" class="card">
+    <nav>
+      <button (click)="view = role==='CUSTOMER' ? 'customer-home':'officer-home'">Home</button>
+      <button (click)="prepareBooking()">Booking Service</button>
+      <button (click)="view='tracking'">Tracking</button>
+      <button *ngIf="role==='OFFICER'" (click)="view='delivery'">Delivery Status</button>
+      <button *ngIf="role==='OFFICER'" (click)="view='pickup'">Pickup Scheduling</button>
+      <button (click)="view='history'; loadHistory()">Previous Booking</button>
+      <button *ngIf="role==='CUSTOMER'" (click)="view='support'">Contact Support</button>
+    </nav>
+    <h3>{{ role==='CUSTOMER' ? 'Customer' : 'Officer' }} Home</h3>
+  </section>
+
+  <section *ngIf="view==='booking'" class="card">
+    <h2>Booking Service</h2>
+    <form [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
+      <h4>Sender Info</h4>
+      <input placeholder="Sender Name" formControlName="senderName" [readonly]="role==='CUSTOMER'" />
+      <input placeholder="Sender Address" formControlName="senderAddress" [readonly]="role==='CUSTOMER'" />
+      <input placeholder="Sender Contact" formControlName="senderContact" [readonly]="role==='CUSTOMER'" />
+      <h4>Receiver Info</h4>
+      <input placeholder="Receiver Name" formControlName="receiverName" />
+      <input placeholder="Receiver Address" formControlName="receiverAddress" />
+      <input placeholder="Pin Code" formControlName="receiverPin" />
+      <input placeholder="Receiver Contact" formControlName="receiverContact" />
+      <h4>Parcel Details</h4>
+      <select formControlName="parcelSize"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select>
+      <input type="number" placeholder="Weight" formControlName="parcelWeight" />
+      <input placeholder="Contents" formControlName="contents" />
+      <select formControlName="deliverySpeed"><option>STANDARD</option><option>EXPRESS</option></select>
+      <select formControlName="packaging"><option>Standard Packaging</option><option>Custom Packaging</option><option>Eco-friendly Packaging</option><option>Fragile Item handling</option></select>
+      <label>Pickup</label><input type="datetime-local" formControlName="pickupTime" />
+      <label>Dropoff</label><input type="datetime-local" formControlName="dropOffTime" />
+      <select formControlName="paymentMethod"><option>Debit</option><option>Credit</option><option>UPI</option></select>
+      <label><input type="checkbox" formControlName="insurance"/> Insurance</label>
+      <label><input type="checkbox" formControlName="trackingService"/> Tracking Service</label>
+      <button type="submit">Continue to Pay Bill</button>
+    </form>
+  </section>
+
+  <section *ngIf="view==='payment'" class="card">
+    <h2>Pay Bill</h2>
+    <p>Bill Amount: {{booking?.cost}}</p>
+    <form [formGroup]="paymentForm" (ngSubmit)="payNow()">
+      <input placeholder="Card No (16 digits)" formControlName="cardNo" />
+      <input placeholder="Card Holder Name" formControlName="cardHolder" />
+      <input placeholder="Expiry MM/YY" formControlName="expiry" />
+      <input placeholder="CVV" formControlName="cvv" />
+      <button type="submit">Make Payment</button>
+      <button type="button" (click)="view='booking'">Back to Home</button>
+    </form>
+  </section>
+
+  <section *ngIf="view==='invoice'" class="card">
+    <h2>Invoice</h2>
+    <p>Booking ID: {{booking?.bookingId}}</p><p>Receiver Name: {{booking?.receiverName}}</p>
+    <p>Receiver Address: {{booking?.receiverAddress}}</p><p>Receiver Pin: {{booking?.receiverPin}}</p>
+    <p>Receiver Mobile: {{booking?.receiverContact}}</p><p>Parcel Weight(g): {{booking?.parcelWeight}}</p>
+    <p>Parcel Contents Description: {{booking?.contents}}</p><p>Parcel Delivery Type: {{booking?.deliverySpeed}}</p>
+    <p>Parcel Packing Preference: {{booking?.packaging}}</p><p>Parcel Pickup Time: {{booking?.pickupTime}}</p>
+    <p>Parcel Dropoff Time: {{booking?.dropOffTime}}</p><p>Parcel Service Cost: {{booking?.cost}}</p>
+    <p>Parcel Payment Time: {{booking?.paymentTime}}</p>
+    <button onclick="window.print()">Print</button>
+  </section>
+
+  <section *ngIf="view==='tracking'" class="card">
+    <h2>Tracking</h2>
+    <input #trackingId placeholder="Booking ID" />
+    <button (click)="track(trackingId.value)">Search</button>
+    <pre *ngIf="trackingResult">{{trackingResult | json}}</pre>
+    <div *ngIf="role==='OFFICER'">
+      <h4>Latest Shipments</h4>
+      <ul><li *ngFor="let s of shipments">{{s.bookingId}} - {{s.status}}</li></ul>
+    </div>
+  </section>
+
+  <section *ngIf="view==='pickup'" class="card">
+    <h2>Pickup Scheduling</h2>
+    <input #pickBooking placeholder="Booking ID"/><input #pickTime type="datetime-local"/>
+    <button (click)="updatePickup(pickBooking.value,pickTime.value)">Save</button>
+  </section>
+
+  <section *ngIf="view==='delivery'" class="card">
+    <h2>Delivery Update</h2>
+    <input #statBooking placeholder="Booking ID"/>
+    <select #stat><option>Picked up</option><option>In Transit</option><option>Delivered</option><option>Returned</option></select>
+    <button (click)="updateStatus(statBooking.value, stat.value)">Update Status</button>
+  </section>
+
+  <section *ngIf="view==='support'" class="card">
+    <h2>Customer Support</h2>
+    <p>Contact Number: +91 1800-555-1010</p>
+    <p>Mail: support@psm.com</p>
+    <p>Address: PSM Helpdesk, Parcel Street, Bengaluru - 560001</p>
+  </section>
+
+  <section *ngIf="view==='history'" class="card">
+    <h2>Booking History</h2>
+    <div *ngIf="role==='OFFICER'">
+      <input #cust placeholder="Customer ID"><input #from type="date"><input #to type="date">
+      <button (click)="loadOfficerHistory(cust.value, from.value, to.value)">Search</button>
+    </div>
+    <table>
+      <tr><th>Customer ID</th><th>Booking ID</th><th>Booking Date</th><th>Receiver Name</th><th>Delivered address</th><th>Amount</th><th>Status</th></tr>
+      <tr *ngFor="let h of history"><td>{{h.customerId}}</td><td>{{h.bookingId}}</td><td>{{h.pickupTime}}</td><td>{{h.receiverName}}</td><td>{{h.receiverAddress}}</td><td>{{h.cost}}</td><td>{{h.status}}</td></tr>
+    </table>
+  </section>
+</div>
